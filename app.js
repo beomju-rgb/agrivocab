@@ -23,6 +23,9 @@ const app = {
         this.updateDashboard();
         this.loadHistory();
         
+        // TTS 음성 초기화
+        this.initVoices();
+        
         // Google Sheets URL이 설정되어 있으면 데이터 로드
         if (this.settings.sheetsUrl) {
             this.loadVocabulary();
@@ -37,6 +40,32 @@ const app = {
                 this.submitAnswer();
             }
         });
+    },
+
+    // TTS 음성 초기화
+    initVoices: function() {
+        this.voices = [];
+        this.voiceReady = false;
+        
+        // 음성 로드
+        const loadVoices = () => {
+            this.voices = speechSynthesis.getVoices();
+            if (this.voices.length > 0) {
+                this.voiceReady = true;
+                // 영어 음성 찾기
+                this.englishVoice = this.voices.find(v => v.lang === 'en-US') 
+                    || this.voices.find(v => v.lang.startsWith('en'))
+                    || this.voices[0];
+                console.log('✅ TTS 준비 완료:', this.englishVoice.name);
+            }
+        };
+        
+        loadVoices();
+        
+        // 음성 목록 변경 이벤트
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
     },
 
     // 설정 로드
@@ -330,20 +359,12 @@ const app = {
             `${this.currentIndex + 1} / ${this.learningWords.length}`;
     },
 
-    // TTS 발음 (ResponsiveVoice 사용)
+    // TTS 발음
     speakWord: function() {
         const word = this.learningWords[this.currentIndex];
         if (!word) return;
         
-        if (typeof responsiveVoice !== 'undefined') {
-            responsiveVoice.speak(word.english, "US English Female", {
-                rate: 0.9,
-                pitch: 1,
-                volume: 1
-            });
-        } else {
-            alert('음성 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
-        }
+        this.speak(word.english);
     },
 
     // 예문 발음
@@ -352,16 +373,35 @@ const app = {
         if (!word) return;
         
         const example = word[`example${num}`];
+        this.speak(example);
+    },
+
+    // 실제 음성 재생
+    speak: function(text) {
+        // 기존 음성 중지
+        speechSynthesis.cancel();
         
-        if (typeof responsiveVoice !== 'undefined') {
-            responsiveVoice.speak(example, "US English Female", {
-                rate: 0.9,
-                pitch: 1,
-                volume: 1
-            });
-        } else {
-            alert('음성 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+        // 음성이 준비되지 않았으면 대기
+        if (!this.voiceReady) {
+            setTimeout(() => this.speak(text), 100);
+            return;
         }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // 음성 설정
+        if (this.englishVoice) {
+            utterance.voice = this.englishVoice;
+        }
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        // 재생
+        speechSynthesis.speak(utterance);
+        
+        console.log('🔊 재생:', text.substring(0, 30) + '...');
     },
 
     // 이전 단어
