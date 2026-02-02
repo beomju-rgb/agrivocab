@@ -26,6 +26,16 @@ const app = {
         // TTS 음성 초기화
         this.initVoices();
         
+        // 첫 클릭 시 음성 활성화
+        this.audioUnlocked = false;
+        document.body.addEventListener('click', () => {
+            if (!this.audioUnlocked) {
+                speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+                this.audioUnlocked = true;
+                console.log('🔓 음성 활성화됨');
+            }
+        }, { once: true });
+        
         // Google Sheets URL이 설정되어 있으면 데이터 로드
         if (this.settings.sheetsUrl) {
             this.loadVocabulary();
@@ -394,13 +404,14 @@ const app = {
         
         const utterance = new SpeechSynthesisUtterance(text);
         
-        // 음성 설정 - Google US English 사용
-        const enVoice = voices.find(v => v.name === 'Google US English (en-US)') 
+        // 음성 설정 - 'Google US English' (괄호 없음)
+        const enVoice = voices.find(v => v.name === 'Google US English') 
             || voices.find(v => v.lang === 'en-US')
             || voices[2]; // 기본값
             
         if (enVoice) {
             utterance.voice = enVoice;
+            console.log('🎤 사용 음성:', enVoice.name);
         }
         
         utterance.lang = 'en-US';
