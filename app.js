@@ -30,7 +30,12 @@ const app = {
         this.audioUnlocked = false;
         document.body.addEventListener('click', () => {
             if (!this.audioUnlocked) {
-                speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+                // 더미 음성으로 엔진 깨우기
+                speechSynthesis.cancel();
+                speechSynthesis.resume();
+                const dummy = new SpeechSynthesisUtterance('');
+                speechSynthesis.speak(dummy);
+                
                 this.audioUnlocked = true;
                 console.log('🔓 음성 활성화됨');
             }
@@ -396,7 +401,7 @@ const app = {
 
     // 실제 음성 재생
     speak: function(text) {
-        // 약간의 딜레이 후 재생 (중단 방지)
+        // 약간의 딜레이 후 재생 (엔진 준비 시간)
         setTimeout(() => {
             const voices = speechSynthesis.getVoices();
             
@@ -424,7 +429,7 @@ const app = {
             
             // 재생
             speechSynthesis.speak(utterance);
-        }, 100);
+        }, 200);
     },
 
     // 이전 단어
