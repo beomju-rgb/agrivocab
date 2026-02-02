@@ -330,6 +330,14 @@ const app = {
             return;
         }
         
+        // 음성 엔진 강제 초기화
+        speechSynthesis.cancel();
+        const voices = speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            this.englishVoice = voices.find(v => v.lang === 'en-US') || voices[2]; // Google US English
+            console.log('🔊 음성 준비:', this.englishVoice.name);
+        }
+        
         // 최대 15개 선택
         this.learningWords = unlearnedWords.slice(0, 15);
         this.currentIndex = 0;
@@ -381,27 +389,32 @@ const app = {
         // 기존 음성 중지
         speechSynthesis.cancel();
         
-        // 음성이 준비되지 않았으면 대기
-        if (!this.voiceReady) {
-            setTimeout(() => this.speak(text), 100);
-            return;
-        }
+        // 음성 목록 가져오기
+        const voices = speechSynthesis.getVoices();
         
         const utterance = new SpeechSynthesisUtterance(text);
         
-        // 음성 설정
-        if (this.englishVoice) {
-            utterance.voice = this.englishVoice;
+        // 음성 설정 - Google US English 사용
+        const enVoice = voices.find(v => v.name === 'Google US English (en-US)') 
+            || voices.find(v => v.lang === 'en-US')
+            || voices[2]; // 기본값
+            
+        if (enVoice) {
+            utterance.voice = enVoice;
         }
+        
         utterance.lang = 'en-US';
         utterance.rate = 0.85;
         utterance.pitch = 1;
         utterance.volume = 1;
         
+        // 이벤트 핸들러
+        utterance.onstart = () => console.log('🔊 재생 시작:', text.substring(0, 30));
+        utterance.onend = () => console.log('✅ 재생 완료');
+        utterance.onerror = (e) => console.error('❌ 음성 에러:', e);
+        
         // 재생
         speechSynthesis.speak(utterance);
-        
-        console.log('🔊 재생:', text.substring(0, 30) + '...');
     },
 
     // 이전 단어
