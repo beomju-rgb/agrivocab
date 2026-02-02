@@ -396,36 +396,35 @@ const app = {
 
     // 실제 음성 재생
     speak: function(text) {
-        // 기존 음성 중지
-        speechSynthesis.cancel();
-        
-        // 음성 목록 가져오기
-        const voices = speechSynthesis.getVoices();
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // 음성 설정 - 'Google US English' (괄호 없음)
-        const enVoice = voices.find(v => v.name === 'Google US English') 
-            || voices.find(v => v.lang === 'en-US')
-            || voices[2]; // 기본값
+        // 약간의 딜레이 후 재생 (중단 방지)
+        setTimeout(() => {
+            const voices = speechSynthesis.getVoices();
             
-        if (enVoice) {
-            utterance.voice = enVoice;
-            console.log('🎤 사용 음성:', enVoice.name);
-        }
-        
-        utterance.lang = 'en-US';
-        utterance.rate = 0.85;
-        utterance.pitch = 1;
-        utterance.volume = 1;
-        
-        // 이벤트 핸들러
-        utterance.onstart = () => console.log('🔊 재생 시작:', text.substring(0, 30));
-        utterance.onend = () => console.log('✅ 재생 완료');
-        utterance.onerror = (e) => console.error('❌ 음성 에러:', e);
-        
-        // 재생
-        speechSynthesis.speak(utterance);
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // 음성 설정 - 'Google US English' (괄호 없음)
+            const enVoice = voices.find(v => v.name === 'Google US English') 
+                || voices.find(v => v.lang === 'en-US')
+                || voices[2];
+                
+            if (enVoice) {
+                utterance.voice = enVoice;
+                console.log('🎤 사용 음성:', enVoice.name);
+            }
+            
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            
+            // 이벤트 핸들러
+            utterance.onstart = () => console.log('🔊 재생 시작:', text.substring(0, 30));
+            utterance.onend = () => console.log('✅ 재생 완료');
+            utterance.onerror = (e) => console.error('❌ 음성 에러:', e.error);
+            
+            // 재생
+            speechSynthesis.speak(utterance);
+        }, 100);
     },
 
     // 이전 단어
