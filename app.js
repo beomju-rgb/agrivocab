@@ -7,6 +7,7 @@ const app = {
     currentIndex: 0,
     testIndex: 0,
     testResults: [],
+    currentAudio: null, // TTS 오디오 객체
     
     // 설정
     settings: {
@@ -330,15 +331,12 @@ const app = {
             `${this.currentIndex + 1} / ${this.learningWords.length}`;
     },
 
-    // TTS 발음
+    // TTS 발음 (Google Translate API 사용)
     speakWord: function() {
         const word = this.learningWords[this.currentIndex];
         if (!word) return;
         
-        const utterance = new SpeechSynthesisUtterance(word.english);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.8;
-        speechSynthesis.speak(utterance);
+        this.playGoogleTTS(word.english);
     },
 
     // 예문 발음
@@ -347,10 +345,27 @@ const app = {
         if (!word) return;
         
         const example = word[`example${num}`];
-        const utterance = new SpeechSynthesisUtterance(example);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.8;
-        speechSynthesis.speak(utterance);
+        this.playGoogleTTS(example);
+    },
+
+    // Google TTS 재생
+    playGoogleTTS: function(text) {
+        // 기존 오디오 정지
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
+        
+        // Google Translate TTS URL
+        const encodedText = encodeURIComponent(text);
+        const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${encodedText}`;
+        
+        // 오디오 재생
+        this.currentAudio = new Audio(audioUrl);
+        this.currentAudio.play().catch(err => {
+            console.error('음성 재생 실패:', err);
+            alert('음성 재생에 실패했습니다. 버튼을 다시 클릭해주세요.');
+        });
     },
 
     // 이전 단어
