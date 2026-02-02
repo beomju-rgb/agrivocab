@@ -88,6 +88,10 @@ const app = {
             this.vocabulary = this.parseCSV(csvText);
             console.log(`${this.vocabulary.length}개의 단어를 로드했습니다.`);
             
+            if (this.vocabulary.length === 0) {
+                alert('단어 데이터가 비어있습니다. Google Sheets를 확인해주세요.');
+            }
+            
             this.updateDashboard();
         } catch (error) {
             console.error('단어 로드 실패:', error);
@@ -101,7 +105,7 @@ const app = {
         return match ? match[1] : null;
     },
 
-    // CSV 파싱
+    // CSV 파싱 (탭 구분 지원)
     parseCSV: function(csv) {
         const lines = csv.split('\n');
         const words = [];
@@ -111,19 +115,26 @@ const app = {
             const line = lines[i].trim();
             if (!line) continue;
             
-            // CSV 파싱 (간단한 버전)
-            const cols = this.parseCSVLine(line);
+            // 탭이나 쉼표로 구분
+            let cols;
+            if (line.includes('\t')) {
+                // TSV 형식
+                cols = line.split('\t');
+            } else {
+                // CSV 형식 (따옴표 처리)
+                cols = this.parseCSVLine(line);
+            }
             
             if (cols.length >= 8) {
                 words.push({
-                    category: cols[0],
-                    english: cols[1],
-                    korean: cols[2],
-                    example1: cols[3],
-                    example2: cols[4],
-                    example3: cols[5],
-                    frequency: cols[6],
-                    difficulty: parseInt(cols[7])
+                    category: cols[0].trim().replace(/^"|"$/g, ''),
+                    english: cols[1].trim().replace(/^"|"$/g, ''),
+                    korean: cols[2].trim().replace(/^"|"$/g, ''),
+                    example1: cols[3].trim().replace(/^"|"$/g, ''),
+                    example2: cols[4].trim().replace(/^"|"$/g, ''),
+                    example3: cols[5].trim().replace(/^"|"$/g, ''),
+                    frequency: cols[6].trim().replace(/^"|"$/g, ''),
+                    difficulty: parseInt(cols[7]) || 2
                 });
             }
         }
@@ -161,9 +172,9 @@ const app = {
             this.progress = JSON.parse(saved);
         } else {
             this.progress = {
-                learned: new Set(),
-                mastered: new Set(),
-                reviewPool: new Set(),
+                learned: [],
+                mastered: [],
+                reviewPool: [],
                 history: []
             };
         }
@@ -234,6 +245,11 @@ const app = {
 
     // 복습 테스트 시작
     startReview: function() {
+        if (this.vocabulary.length === 0) {
+            alert('단어 데이터가 로드되지 않았습니다. 설정을 확인해주세요.');
+            return;
+        }
+
         // 복습 풀에서 단어 선택 (없으면 learned에서)
         let reviewWords = Array.from(this.progress.reviewPool);
         
@@ -270,6 +286,11 @@ const app = {
 
     // 신규 단어 학습 시작
     startLearning: function() {
+        if (this.vocabulary.length === 0) {
+            alert('단어 데이터가 로드되지 않았습니다. 설정을 확인해주세요.');
+            return;
+        }
+
         // 아직 학습하지 않은 단어 찾기
         const unlearnedWords = this.vocabulary.filter((_, index) => 
             !this.progress.learned.has(index)
