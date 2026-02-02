@@ -7,6 +7,7 @@ const app = {
     currentIndex: 0,
     testIndex: 0,
     testResults: [],
+    currentAudio: null, // Audio 객체
     
     // 설정
     settings: {
@@ -387,7 +388,7 @@ const app = {
         const word = this.learningWords[this.currentIndex];
         if (!word) return;
         
-        this.speak(word.english);
+        this.playAudioTTS(word.english);
     },
 
     // 예문 발음
@@ -396,40 +397,29 @@ const app = {
         if (!word) return;
         
         const example = word[`example${num}`];
-        this.speak(example);
+        this.playAudioTTS(example);
     },
 
-    // 실제 음성 재생
-    speak: function(text) {
-        // 약간의 딜레이 후 재생 (엔진 준비 시간)
-        setTimeout(() => {
-            const voices = speechSynthesis.getVoices();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            
-            // 음성 설정 - 'Google US English' (괄호 없음)
-            const enVoice = voices.find(v => v.name === 'Google US English') 
-                || voices.find(v => v.lang === 'en-US')
-                || voices[2];
-                
-            if (enVoice) {
-                utterance.voice = enVoice;
-                console.log('🎤 사용 음성:', enVoice.name);
-            }
-            
-            utterance.lang = 'en-US';
-            utterance.rate = 0.85;
-            utterance.pitch = 1;
-            utterance.volume = 1;
-            
-            // 이벤트 핸들러
-            utterance.onstart = () => console.log('🔊 재생 시작:', text.substring(0, 30));
-            utterance.onend = () => console.log('✅ 재생 완료');
-            utterance.onerror = (e) => console.error('❌ 음성 에러:', e.error);
-            
-            // 재생
-            speechSynthesis.speak(utterance);
-        }, 200);
+    // Audio 기반 TTS 재생
+    playAudioTTS: function(text) {
+        // 기존 오디오 정지
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+        }
+        
+        // VoiceRSS API 사용 (무료)
+        const apiKey = 'f6a888b5049d4d679f68d393db4ae338';
+        const url = `https://api.voicerss.org/?key=${apiKey}&hl=en-us&src=${encodeURIComponent(text)}`;
+        
+        this.currentAudio = new Audio(url);
+        
+        this.currentAudio.play()
+            .then(() => {
+                console.log('🔊 재생:', text.substring(0, 30));
+            })
+            .catch(err => {
+                console.error('❌ 재생 실패:', err);
+            });
     },
 
     // 이전 단어
