@@ -80,13 +80,13 @@ const app = {
             }
 
             // Google Sheets를 CSV로 export
-            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
+            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=1754580802`;
             
             const response = await fetch(csvUrl);
             const csvText = await response.text();
             
             this.vocabulary = this.parseCSV(csvText);
-            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=1754580802`;
+            console.log(`${this.vocabulary.length}개의 단어를 로드했습니다.`);
             
             if (this.vocabulary.length === 0) {
                 alert('단어 데이터가 비어있습니다. Google Sheets를 확인해주세요.');
